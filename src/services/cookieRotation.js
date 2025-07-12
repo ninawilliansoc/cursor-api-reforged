@@ -76,7 +76,7 @@ function getCurrentCookie() {
         lastKnownCookiesLength = cookies.length;
     }
     
-    // Get the current cookie
+    // Get the current cookie - do not change the index here
     const currentCookie = cookies[currentCookieIndex];
     
     console.log(`Cookie rotation: Using cookie ${currentCookie.name} (${currentCookie.id}), current index is ${currentCookieIndex}`);
@@ -91,6 +91,8 @@ function getCurrentCookie() {
  * @returns {string|null} The current authentication cookie or null if none are available
  */
 function getNextCookie() {
+    // We only want to return the current cookie without rotating
+    // Rotation is handled by the timer only
     return getCurrentCookie();
 }
 
@@ -116,8 +118,16 @@ function startCookieRotationTimer() {
     
     console.log(`Starting cookie rotation timer with interval: ${ROTATION_INTERVAL_MS}ms`);
     
-    // Initial rotation to set the first cookie
-    rotateCookie();
+    // Initialize without rotating (just set the initial cookie)
+    const cookies = authCookieModel.getAllActiveCookies();
+    if (cookies && cookies.length > 0) {
+        lastKnownCookiesLength = cookies.length;
+        // Start with the first cookie without rotating
+        currentCookieIndex = 0;
+        const currentCookie = cookies[currentCookieIndex];
+        console.log(`Cookie rotation: Initial cookie set to ${currentCookie.name} (${currentCookie.id}), index ${currentCookieIndex}`);
+        lastRotationTimestamp = Date.now();
+    }
     
     // Set up the timer for future rotations
     rotationTimer = setInterval(rotateCookie, ROTATION_INTERVAL_MS);
