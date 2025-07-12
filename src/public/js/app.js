@@ -843,12 +843,15 @@ function renderTokens(tokens) {
     tokensList.innerHTML = '';
     
     if (tokens.length === 0) {
-        tokensList.innerHTML = '<tr><td colspan="8" class="text-center">No tokens found</td></tr>';
+        tokensList.innerHTML = '<tr><td colspan="9" class="text-center">No tokens found</td></tr>';
         return;
     }
     
     tokens.forEach(token => {
         const row = document.createElement('tr');
+        
+        // Initialize usageCount if it doesn't exist
+        const usageCount = token.usageCount || 0;
         
         row.innerHTML = `
             <td>${escapeHtml(token.name)}</td>
@@ -857,6 +860,7 @@ function renderTokens(tokens) {
             <td>${token.rateLimit ? 'Yes' : 'No'}</td>
             <td>${token.queuePriority ? 'Yes' : 'No'}</td>
             <td>${token.premium ? 'Yes' : 'No'}</td>
+            <td>${usageCount}</td>
             <td>
                 <div class="token-value">
                     <span class="token-mask">••••••••••••••••</span>
@@ -965,6 +969,10 @@ function openTokenModal(token = null) {
     // Reset form
     tokenForm.reset();
     
+    // Hide IP history section by default
+    const ipHistorySection = document.getElementById('ipHistorySection');
+    ipHistorySection.classList.add('hidden');
+    
     if (token) {
         // Edit mode
         tokenModalTitle.textContent = 'Edit Token';
@@ -980,6 +988,12 @@ function openTokenModal(token = null) {
         document.getElementById('tokenRateLimit').checked = token.rateLimit;
         document.getElementById('tokenQueuePriority').checked = token.queuePriority;
         document.getElementById('tokenPremium').checked = token.premium;
+        
+        // Show IP history section and populate it
+        if (token.ipHistory && token.ipHistory.length > 0) {
+            ipHistorySection.classList.remove('hidden');
+            renderIpHistory(token.ipHistory);
+        }
     } else {
         // Create mode
         tokenModalTitle.textContent = 'Create Token';
@@ -987,6 +1001,34 @@ function openTokenModal(token = null) {
     }
     
     tokenModal.style.display = 'block';
+}
+
+// Render IP history in the token modal
+function renderIpHistory(ipHistory) {
+    const ipHistoryList = document.getElementById('ipHistoryList');
+    ipHistoryList.innerHTML = '';
+    
+    if (!ipHistory || ipHistory.length === 0) {
+        ipHistoryList.innerHTML = '<tr><td colspan="2" class="text-center">No IP history found</td></tr>';
+        return;
+    }
+    
+    // Sort by timestamp (newest first)
+    const sortedHistory = [...ipHistory].sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    
+    sortedHistory.forEach(entry => {
+        const row = document.createElement('tr');
+        const timestamp = new Date(entry.timestamp).toLocaleString();
+        
+        row.innerHTML = `
+            <td>${escapeHtml(entry.ip)}</td>
+            <td>${timestamp}</td>
+        `;
+        
+        ipHistoryList.appendChild(row);
+    });
 }
 
 function openAdminModal() {

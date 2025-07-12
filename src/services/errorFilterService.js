@@ -11,9 +11,10 @@ const MAX_RETRY_ATTEMPTS = 20;
  * @param {string} response - The response text to check for errors
  * @param {Function} requestFn - A function that makes the API request with a new cookie
  * @param {number} attempts - Current number of attempts (used for recursion)
+ * @param {boolean} isPremium - Whether the token is premium or not
  * @returns {Promise<Object>} - The final response object after error handling
  */
-async function handlePremiumResponse(response, requestFn, attempts = 0) {
+async function handlePremiumResponse(response, requestFn, attempts = 0, isPremium = false) {
     // Check if the response contains any error patterns
     const errorFilter = errorFilterModel.checkForErrors(response);
     
@@ -27,6 +28,29 @@ async function handlePremiumResponse(response, requestFn, attempts = 0) {
         };
     }
     
+    // Check which type of error was detected
+    const isFreeRequestsLimitError = errorFilter.description === "Cursor free requests limit message";
+    const isUnauthorizedError = errorFilter.description === "Cursor unauthorized request error";
+    
+    // For free requests limit errors, only rotate cookies if the token is premium
+    // For unauthorized errors, always rotate cookies
+    if (isFreeRequestsLimitError && !isPremium) {
+        console.log('Free requests limit error detected, but token is not premium. Not rotating cookie.');
+        return {
+            response,
+            error: null,
+            filtered: false,
+            attempts
+        };
+    }
+    
+    // Log the specific type of error detected
+    if (isFreeRequestsLimitError) {
+        console.log('Free requests limit error detected. Rotating cookie.');
+    } else if (isUnauthorizedError) {
+        console.log('Unauthorized request error detected. Rotating cookie.');
+    }
+    
     console.log(`Error detected: "${errorFilter.pattern}". Rotating cookie and retrying (attempt ${attempts + 1}/${MAX_RETRY_ATTEMPTS})`);
     
     // Get a new cookie and retry the request
@@ -35,7 +59,7 @@ async function handlePremiumResponse(response, requestFn, attempts = 0) {
         const newResponse = await requestFn();
         
         // Recursively check the new response
-        return await handlePremiumResponse(newResponse, requestFn, attempts + 1);
+        return await handlePremiumResponse(newResponse, requestFn, attempts + 1, isPremium);
     } catch (error) {
         console.error('Error during cookie rotation retry:', error);
         return { 

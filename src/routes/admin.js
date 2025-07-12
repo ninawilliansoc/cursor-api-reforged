@@ -135,6 +135,15 @@ router.get('/tokens/:id', adminAuth, (req, res) => {
         });
     }
     
+    // Make sure usageCount and ipHistory are initialized if they don't exist yet
+    if (!token.usageCount) {
+        token.usageCount = 0;
+    }
+    
+    if (!token.ipHistory) {
+        token.ipHistory = [];
+    }
+    
     res.json(token);
 });
 

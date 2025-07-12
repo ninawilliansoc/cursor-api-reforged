@@ -64,7 +64,9 @@ function createToken(name, description = '', expirationDate = null, rateLimit = 
         queuePriority,
         premium,
         value: generateTokenValue(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        usageCount: 0,
+        ipHistory: []
     };
     
     tokens.push(newToken);
@@ -150,6 +152,60 @@ function isTokenValid(value) {
     return { valid: true, token };
 }
 
+/**
+ * Record token usage with IP address
+ * @param {string} tokenId - The ID of the token
+ * @param {string} ipAddress - The IP address of the client
+ * @returns {Object|null} The updated token or null if token not found
+ */
+function recordTokenUsage(tokenId, ipAddress) {
+    const tokens = loadTokens();
+    const index = tokens.findIndex(token => token.id === tokenId);
+    
+    if (index === -1) {
+        console.log(`Record token usage failed: Token with ID ${tokenId} not found`);
+        return null;
+    }
+    
+    // Increment usage count
+    if (!tokens[index].usageCount) {
+        tokens[index].usageCount = 0;
+    }
+    tokens[index].usageCount++;
+    
+    // Initialize IP history array if it doesn't exist
+    if (!tokens[index].ipHistory) {
+        tokens[index].ipHistory = [];
+    }
+    
+    // Add IP to history with timestamp
+    const timestamp = new Date().toISOString();
+    
+    // Check if we already have a recent entry from this IP (within the last hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentEntry = tokens[index].ipHistory.find(entry => 
+        entry.ip === ipAddress && new Date(entry.timestamp) > oneHourAgo
+    );
+    
+    if (!recentEntry) {
+        // Only add new entry if we don't have a recent one from this IP
+        tokens[index].ipHistory.push({
+            ip: ipAddress,
+            timestamp: timestamp
+        });
+        
+        // Keep only the most recent 100 entries to prevent unlimited growth
+        if (tokens[index].ipHistory.length > 100) {
+            tokens[index].ipHistory = tokens[index].ipHistory.slice(-100);
+        }
+    }
+    
+    console.log(`Token usage recorded: ${tokens[index].name} (${tokenId}), IP: ${ipAddress}, Total usage: ${tokens[index].usageCount}`);
+    
+    saveTokens(tokens);
+    return tokens[index];
+}
+
 // Export tokens to JSON string
 function exportTokens() {
     const tokens = loadTokens();
@@ -190,6 +246,7 @@ module.exports = {
     updateToken,
     deleteToken,
     isTokenValid,
+    recordTokenUsage,
     exportTokens,
     importTokens
 };

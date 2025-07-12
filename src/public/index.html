@@ -64,6 +64,7 @@
                                 <th>Rate Limit</th>
                                 <th>Queue Priority</th>
                                 <th>Premium</th>
+                                <th>Usage</th>
                                 <th>Token Value</th>
                                 <th>Actions</th>
                             </tr>
@@ -110,6 +111,24 @@
                                 <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
                             </div>
                         </form>
+                        
+                        <!-- IP History Section (only shown when editing) -->
+                        <div id="ipHistorySection" class="hidden">
+                            <h4>IP History</h4>
+                            <div class="table-container">
+                                <table id="ipHistoryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>IP Address</th>
+                                            <th>Timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ipHistoryList">
+                                        <!-- IP history will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

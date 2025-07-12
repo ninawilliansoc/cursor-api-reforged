@@ -180,6 +180,10 @@ router.post('/chat/completions', async (req, res) => {
       apiToken = req.token;
       isPremium = apiToken.premium === true;
       console.log(`Using token from auth middleware: ${apiToken.name}`);
+      
+      // Record token usage with client IP
+      const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      tokenModel.recordTokenUsage(apiToken.id, clientIp);
     }
     
     // Get the next cookie from the rotation service
@@ -344,7 +348,9 @@ router.post('/chat/completions', async (req, res) => {
               async () => {
                 const retryResult = await makeRequest();
                 return retryResult.content;
-              }
+              },
+              0, // attempts
+              isPremium // pass the isPremium flag
             );
             
             // Use the final chunks (either original or from a successful retry)
@@ -465,7 +471,12 @@ router.post('/chat/completions', async (req, res) => {
           });
           
           // Handle premium response with error filtering
-          const result = await handlePremiumResponse(content, makeRequest);
+          const result = await handlePremiumResponse(
+            content, 
+            makeRequest, 
+            0, // attempts
+            isPremium // pass the isPremium flag
+          );
           
           // Format the final response
           let formattedContent = formatResponseContent(result.response);

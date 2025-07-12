@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 
 const config = require('./config/config');
@@ -11,6 +12,41 @@ const routes = require('./routes');
 // Import models
 const tokenModel = require('./models/token');
 const adminModel = require('./models/admin');
+const authCookieModel = require('./models/authCookie');
+const cookieRotation = require('./services/cookieRotation');
+
+// Ensure data directory and files exist
+const dataDir = path.join(__dirname, '../data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log('Created data directory:', dataDir);
+}
+
+// Ensure authCookies.json file exists
+const authCookiesFile = path.join(dataDir, 'authCookies.json');
+if (!fs.existsSync(authCookiesFile)) {
+    fs.writeFileSync(authCookiesFile, JSON.stringify([], null, 2));
+    console.log('Created empty authCookies.json file');
+    
+    // If auth cookies are defined in environment variables, import them
+    if (config.auth.cookies && config.auth.cookies.length > 0) {
+        console.log(`Found ${config.auth.cookies.length} auth cookies in environment variables, importing...`);
+        config.auth.cookies.forEach((cookieValue, index) => {
+            try {
+                const cookieName = `ENV_COOKIE_${index + 1}`;
+                authCookieModel.createAuthCookie(
+                    cookieName,
+                    cookieValue,
+                    'Imported from environment variables on startup',
+                    true
+                );
+                console.log(`Imported cookie ${cookieName} from environment variables`);
+            } catch (error) {
+                console.error(`Error importing cookie from environment variables:`, error.message);
+            }
+        });
+    }
+}
 
 // Import middleware creators
 const createRateLimitMiddleware = require('./middleware/rateLimit');
@@ -68,4 +104,8 @@ app.use("/", routes);
 app.listen(config.port, () => {
     console.log(`Server listening on port: ${config.port}`);
     console.log(`Admin panel available at: http://localhost:${config.port}/admin`);
+    
+    // Start the cookie rotation timer
+    cookieRotation.startCookieRotationTimer();
+    console.log('Cookie rotation timer started with 30-second interval');
 });

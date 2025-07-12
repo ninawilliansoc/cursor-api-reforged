@@ -762,6 +762,22 @@ input[type="file"]::file-selector-button:hover {
     }
 }
 
+/* IP History Styles */
+#ipHistorySection {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+#ipHistorySection h4 {
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+#ipHistoryTable {
+    margin-bottom: 0;
+}
+
 /* Auth Cookie Status Styles */
 .auth-cookie-status-container {
     display: flex;
