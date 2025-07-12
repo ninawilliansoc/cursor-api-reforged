@@ -127,17 +127,26 @@ function deleteToken(id) {
 
 // Check if a token is valid
 function isTokenValid(value) {
+    if (!value) {
+        console.log('Token validation failed: No token value provided');
+        return { valid: false, reason: 'No token value provided' };
+    }
+    
+    console.log(`Validating token: ${value.substring(0, 10)}...`);
     const token = getTokenByValue(value);
     
     if (!token) {
+        console.log(`Token validation failed: Token with value ${value.substring(0, 10)}... not found in database`);
         return { valid: false, reason: 'Token not found' };
     }
     
     // Check if the token has expired
     if (token.expirationDate && new Date(token.expirationDate) < new Date()) {
+        console.log(`Token validation failed: Token ${token.name} (${token.id}) has expired on ${token.expirationDate}`);
         return { valid: false, reason: 'Token has expired' };
     }
     
+    console.log(`Token validation successful: ${token.name} (${token.id})`);
     return { valid: true, token };
 }
 

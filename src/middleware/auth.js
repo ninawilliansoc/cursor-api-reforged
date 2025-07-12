@@ -21,21 +21,29 @@ function createAuthMiddleware(tokenModel) {
         
         // If no token is provided, return 401
         if (!tokenValue) {
+            console.log(`Auth middleware: No token provided for path ${req.path}`);
             return res.status(401).json({
                 error: 'Authentication token is required',
                 message: 'Please provide a valid token in the X-API-Token header'
             });
         }
         
+        console.log(`Auth middleware: Validating token for path ${req.path}`);
+        
         // Validate the token
-        const { valid, reason, token } = tokenModel.isTokenValid(tokenValue);
+        const validationResult = tokenModel.isTokenValid(tokenValue);
+        const { valid, reason, token } = validationResult;
         
         if (!valid) {
+            console.log(`Auth middleware: Token validation failed: ${reason}`);
             return res.status(401).json({
                 error: 'Invalid authentication token',
-                message: reason || 'The provided token is invalid or expired'
+                message: reason || 'The provided token is invalid or expired',
+                details: 'Please check your token or create a new one in the admin panel'
             });
         }
+        
+        console.log(`Auth middleware: Token validated successfully for ${token.name}`);
         
         // Store token in request for use in other middleware
         req.token = token;

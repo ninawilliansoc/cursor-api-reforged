@@ -15,17 +15,22 @@ function getNextCookie() {
     
     // If no cookies are available, return null
     if (!cookies || cookies.length === 0) {
+        console.log('Cookie rotation: No active cookies available');
         lastKnownCookiesLength = 0;
         currentCookieIndex = 0;
         return null;
     }
     
+    console.log(`Cookie rotation: Found ${cookies.length} active cookies`);
+    
     // Check if the number of cookies has changed since the last request
     // This handles cases where cookies are added or removed dynamically
     if (cookies.length !== lastKnownCookiesLength) {
+        console.log(`Cookie rotation: Number of cookies changed from ${lastKnownCookiesLength} to ${cookies.length}`);
         // If the number of cookies has changed, make sure the index is still valid
         if (currentCookieIndex >= cookies.length) {
             currentCookieIndex = 0;
+            console.log('Cookie rotation: Resetting index to 0');
         }
         lastKnownCookiesLength = cookies.length;
     }
@@ -35,6 +40,8 @@ function getNextCookie() {
     
     // Update the index for the next request
     currentCookieIndex = (currentCookieIndex + 1) % cookies.length;
+    
+    console.log(`Cookie rotation: Using cookie ${currentCookie.name} (${currentCookie.id}), next index will be ${currentCookieIndex}`);
     
     // Return the cookie value
     return currentCookie.value;

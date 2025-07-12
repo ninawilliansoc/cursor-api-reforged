@@ -56,23 +56,36 @@ function initialize() {
     
     // If there are cookies in the environment variables, migrate them
     if (config.auth.cookies && config.auth.cookies.length > 0) {
+        console.log(`Found ${config.auth.cookies.length} cookies in environment variables`);
         const existingValues = new Set(cookies.map(cookie => cookie.value));
         
         // Add any cookies from config that aren't already in the file
-        const newCookies = config.auth.cookies.filter(cookieValue => !existingValues.has(cookieValue))
-            .map(cookieValue => ({
-                id: crypto.randomUUID(),
-                name: `Migrated Cookie ${new Date().toISOString()}`,
-                value: cookieValue,
-                description: 'Migrated from environment variables',
-                createdAt: new Date().toISOString(),
-                active: true
-            }));
+        const newCookies = config.auth.cookies.filter(cookieValue => {
+            const notExists = !existingValues.has(cookieValue);
+            if (!notExists) {
+                console.log(`Cookie already exists in file: ${cookieValue.substring(0, 10)}...`);
+            }
+            return notExists;
+        }).map(cookieValue => ({
+            id: crypto.randomUUID(),
+            name: `Migrated Cookie ${new Date().toISOString()}`,
+            value: cookieValue,
+            description: 'Migrated from environment variables',
+            createdAt: new Date().toISOString(),
+            active: true
+        }));
         
         if (newCookies.length > 0) {
+            console.log(`Adding ${newCookies.length} new cookies from environment variables`);
             saveAuthCookies([...cookies, ...newCookies]);
         }
+    } else {
+        console.log('No cookies found in environment variables');
     }
+    
+    // Log the current state of cookies
+    const activeCookies = getAllActiveCookies();
+    console.log(`Total active cookies available: ${activeCookies.length}`);
     
     return cookiesCache;
 }

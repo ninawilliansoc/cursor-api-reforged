@@ -177,31 +177,58 @@ router.post('/chat/completions', async (req, res) => {
     
     if (req.headers['x-api-token']) {
       const tokenValue = req.headers['x-api-token'];
-      const { valid, token } = tokenModel.isTokenValid(tokenValue);
+      console.log(`Validating token: ${tokenValue.substring(0, 10)}...`);
+      const validationResult = tokenModel.isTokenValid(tokenValue);
+      const { valid, token, reason } = validationResult;
       
       if (valid) {
+        console.log(`Token is valid: ${token.name}`);
         apiToken = token;
         isPremium = token.premium === true;
+      } else {
+        console.log(`Token validation failed: ${reason}`);
+        return res.status(401).json({
+          error: 'Invalid API token',
+          message: reason || 'The provided token is invalid or expired',
+          details: 'Please check your token or create a new one in the admin panel'
+        });
       }
+    } else {
+      console.log('No x-api-token header found in request');
     }
     
     // Get the next cookie from the rotation service
     let authToken = getNextCookie();
+    console.log(`Auth cookie from rotation service: ${authToken ? 'Found' : 'Not found'}`);
     
     // If no cookies are available in the rotation service, fall back to the authorization header
     if (!authToken) {
       console.log('No auth cookies available in rotation service, falling back to authorization header');
       let bearerToken = req.headers.authorization?.replace('Bearer ', '');
       if (!bearerToken) {
-        return res.status(401).json({
-          error: 'No authentication credentials provided',
-          message: 'Please provide a valid token in the X-API-Token header or add auth cookies through the admin panel'
-        });
+        console.log('No authorization header found');
+        
+        // Check if we have auth cookies in the environment variables but they weren't loaded properly
+        if (config.auth.cookies && config.auth.cookies.length > 0) {
+          console.log(`Found ${config.auth.cookies.length} cookies in config but they weren't loaded into the rotation service`);
+          
+          // Try to use one directly from config as a last resort
+          authToken = config.auth.cookies[0];
+          console.log(`Using first cookie from config: ${authToken ? 'Found' : 'Not found'}`);
+        }
+        
+        if (!authToken) {
+          return res.status(401).json({
+            error: 'No authentication credentials provided',
+            message: 'Please provide a valid token in the X-API-Token header or add auth cookies through the admin panel'
+          });
+        }
+      } else {
+        const keys = bearerToken.split(',').map((key) => key.trim());
+        console.log(`Found ${keys.length} keys in authorization header`);
+        // Randomly select one key to use
+        authToken = keys[Math.floor(Math.random() * keys.length)];
       }
-      
-      const keys = bearerToken.split(',').map((key) => key.trim());
-      // Randomly select one key to use
-      authToken = keys[Math.floor(Math.random() * keys.length)];
     }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0 || !authToken) {
