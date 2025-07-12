@@ -16,15 +16,21 @@ function createAuthMiddleware(tokenModel) {
             return next();
         }
         
-        // Get token from request
-        const tokenValue = req.headers['x-api-token'];
+        // Get token from request using Authorization header
+        let tokenValue = null;
+        if (req.headers.authorization) {
+            const authHeader = req.headers.authorization;
+            if (authHeader.startsWith('Bearer ')) {
+                tokenValue = authHeader.substring(7); // Remove 'Bearer ' prefix
+            }
+        }
         
         // If no token is provided, return 401
         if (!tokenValue) {
             console.log(`Auth middleware: No token provided for path ${req.path}`);
             return res.status(401).json({
                 error: 'Authentication token is required',
-                message: 'Please provide a valid token in the X-API-Token header'
+                message: 'Please provide a valid token in the Authorization header using Bearer format'
             });
         }
         

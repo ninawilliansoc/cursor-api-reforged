@@ -106,7 +106,7 @@ router.get("/models", async (req, res) => {
       if (!bearerToken) {
         return res.status(401).json({
           error: 'No authentication credentials provided',
-          message: 'Please provide a valid token in the X-API-Token header or add auth cookies through the admin panel'
+          message: 'Please provide a valid token in the Authorization header using Bearer format or add auth cookies through the admin panel'
         });
       }
       
@@ -175,26 +175,11 @@ router.post('/chat/completions', async (req, res) => {
     let apiToken = null;
     let isPremium = false;
     
-    if (req.headers['x-api-token']) {
-      const tokenValue = req.headers['x-api-token'];
-      console.log(`Validating token: ${tokenValue.substring(0, 10)}...`);
-      const validationResult = tokenModel.isTokenValid(tokenValue);
-      const { valid, token, reason } = validationResult;
-      
-      if (valid) {
-        console.log(`Token is valid: ${token.name}`);
-        apiToken = token;
-        isPremium = token.premium === true;
-      } else {
-        console.log(`Token validation failed: ${reason}`);
-        return res.status(401).json({
-          error: 'Invalid API token',
-          message: reason || 'The provided token is invalid or expired',
-          details: 'Please check your token or create a new one in the admin panel'
-        });
-      }
-    } else {
-      console.log('No x-api-token header found in request');
+    // The token should already be validated by the auth middleware
+    if (req.token) {
+      apiToken = req.token;
+      isPremium = apiToken.premium === true;
+      console.log(`Using token from auth middleware: ${apiToken.name}`);
     }
     
     // Get the next cookie from the rotation service
@@ -220,7 +205,7 @@ router.post('/chat/completions', async (req, res) => {
         if (!authToken) {
           return res.status(401).json({
             error: 'No authentication credentials provided',
-            message: 'Please provide a valid token in the X-API-Token header or add auth cookies through the admin panel'
+            message: 'Please provide a valid token in the Authorization header using Bearer format or add auth cookies through the admin panel'
           });
         }
       } else {
