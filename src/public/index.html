@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor Proxy Admin Panel</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/app.js" defer></script>
+</head>
+<body class="dark-mode">
+    <div class="container">
+        <header>
+            <h1>Cursor Proxy Admin Panel</h1>
+            <div class="user-info" id="userInfo">
+                <span id="username"></span>
+                <button id="logoutBtn" class="btn btn-danger">Logout</button>
+            </div>
+        </header>
+
+        <!-- Login Form -->
+        <div id="loginSection" class="section">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+                <div id="loginError" class="error-message"></div>
+            </form>
+        </div>
+
+        <!-- Main Content (hidden until logged in) -->
+        <div id="mainContent" class="hidden">
+            <nav>
+                <ul class="tabs">
+                    <li><a href="#tokens" class="tab active" data-tab="tokens">Tokens</a></li>
+                    <li id="authCookiesTab"><a href="#authCookies" class="tab" data-tab="authCookies">Auth Cookies</a></li>
+                    <li id="adminsTab"><a href="#admins" class="tab" data-tab="admins">Admins</a></li>
+                    <li id="errorFiltersTab"><a href="#errorFilters" class="tab" data-tab="errorFilters">Error Filters</a></li>
+                    <li id="logsTab"><a href="#logs" class="tab" data-tab="logs">Logs</a></li>
+                    <li id="exportImportTab"><a href="#exportImport" class="tab" data-tab="exportImport">Export/Import</a></li>
+                </ul>
+            </nav>
+
+            <!-- Tokens Section -->
+            <div id="tokensSection" class="section active">
+                <div class="section-header">
+                    <h2>API Tokens</h2>
+                    <button id="createTokenBtn" class="btn btn-primary">Create Token</button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="tokensTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Expiration</th>
+                                <th>Rate Limit</th>
+                                <th>Queue Priority</th>
+                                <th>Premium</th>
+                                <th>Token Value</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tokensList">
+                            <!-- Tokens will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Token Form Modal -->
+                <div id="tokenModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3 id="tokenModalTitle">Create Token</h3>
+                        <form id="tokenForm">
+                            <input type="hidden" id="tokenId">
+                            <div class="form-group">
+                                <label for="tokenName">Name (Required)</label>
+                                <input type="text" id="tokenName" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tokenDescription">Description (Optional)</label>
+                                <textarea id="tokenDescription" name="description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="tokenExpiration">Expiration Date (Optional)</label>
+                                <input type="date" id="tokenExpiration" name="expirationDate">
+                            </div>
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="tokenRateLimit" name="rateLimit" checked>
+                                <label for="tokenRateLimit">Enable Rate Limit</label>
+                            </div>
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="tokenQueuePriority" name="queuePriority">
+                                <label for="tokenQueuePriority">Enable Queue Priority</label>
+                            </div>
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="tokenPremium" name="premium">
+                                <label for="tokenPremium">Enable Premium (Error Filtering)</label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auth Cookies Section -->
+            <div id="authCookiesSection" class="section">
+                <div class="section-header">
+                    <h2>Auth Cookies</h2>
+                    <button id="createAuthCookieBtn" class="btn btn-primary">Add Auth Cookie</button>
+                </div>
+                
+                <!-- Auth Cookie Status -->
+                <div class="auth-cookie-status-container">
+                    <div id="authCookieStatus" class="status-panel">
+                        <!-- Status will be inserted here by JavaScript -->
+                    </div>
+                    <button id="resetCookieRotationBtn" class="btn btn-secondary">Reset Cookie Rotation</button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="authCookiesTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Active</th>
+                                <th>Cookie Value</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="authCookiesList">
+                            <!-- Auth cookies will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Auth Cookie Form Modal -->
+                <div id="authCookieModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3 id="authCookieModalTitle">Add Auth Cookie</h3>
+                        <form id="authCookieForm">
+                            <input type="hidden" id="authCookieId">
+                            <div class="form-group">
+                                <label for="authCookieName">Name (Required)</label>
+                                <input type="text" id="authCookieName" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="authCookieValue">Cookie Value (Required)</label>
+                                <textarea id="authCookieValue" name="value" required></textarea>
+                                <small>The authentication cookie value from Cursor</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="authCookieDescription">Description (Optional)</label>
+                                <textarea id="authCookieDescription" name="description"></textarea>
+                            </div>
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="authCookieActive" name="active" checked>
+                                <label for="authCookieActive">Active</label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export/Import Section -->
+            <div id="exportImportSection" class="section">
+                <div class="section-header">
+                    <h2>Export/Import Data</h2>
+                </div>
+                
+                <div class="export-import-container">
+                    <div class="export-section">
+                        <h3>Export Data</h3>
+                        <p>Export your tokens and admin accounts as JSON. This is useful for backing up your data or transferring to another instance.</p>
+                        <button id="exportDataBtn" class="btn btn-primary">Export Data</button>
+                        <div id="exportResult" class="mt-3"></div>
+                    </div>
+                    
+                    <div class="import-section">
+                        <h3>Import Data</h3>
+                        <p>Import tokens and admin accounts from JSON. This will replace your current data.</p>
+                        
+                        <div class="import-tabs">
+                            <button id="pasteTabBtn" class="import-tab-btn active">Paste JSON</button>
+                            <button id="fileTabBtn" class="import-tab-btn">Upload File</button>
+                        </div>
+                        
+                        <div id="pasteImportTab" class="import-tab-content active">
+                            <div class="form-group">
+                                <label for="importData">JSON Data</label>
+                                <textarea id="importData" rows="10" placeholder="Paste your JSON data here..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div id="fileImportTab" class="import-tab-content">
+                            <div class="form-group">
+                                <label for="importFile">JSON File</label>
+                                <input type="file" id="importFile" accept=".json">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="importTokens" checked>
+                            <label for="importTokens">Import Tokens</label>
+                        </div>
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="importAdmins" checked>
+                            <label for="importAdmins">Import Admins</label>
+                        </div>
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="importAuthCookies" checked>
+                            <label for="importAuthCookies">Import Auth Cookies</label>
+                        </div>
+                        <button id="importDataBtn" class="btn btn-primary">Import Data</button>
+                        <div id="importResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Logs Section -->
+            <div id="logsSection" class="section">
+                <div class="section-header">
+                    <h2>Admin Action Logs</h2>
+                    <div class="logs-actions">
+                        <button id="refreshLogsBtn" class="btn btn-secondary">Refresh</button>
+                        <div class="export-format">
+                            <button id="exportLogsJsonBtn" class="btn btn-primary">Export JSON</button>
+                            <button id="exportLogsCsvBtn" class="btn btn-primary">Export CSV</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="logs-filters">
+                    <div class="form-group">
+                        <label for="filterAdmin">Admin</label>
+                        <input type="text" id="filterAdmin" placeholder="Filter by admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterAction">Action</label>
+                        <input type="text" id="filterAction" placeholder="Filter by action">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterStartDate">Start Date</label>
+                        <input type="date" id="filterStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterEndDate">End Date</label>
+                        <input type="date" id="filterEndDate">
+                    </div>
+                    <button id="applyFiltersBtn" class="btn btn-secondary">Apply Filters</button>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">Reset</button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="logsTable">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Admin</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsList">
+                            <!-- Logs will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="logsPagination">
+                    <!-- Pagination will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Error Filters Section -->
+            <div id="errorFiltersSection" class="section">
+                <div class="section-header">
+                    <h2>Error Filters</h2>
+                    <button id="createErrorFilterBtn" class="btn btn-primary">Create Filter</button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="errorFiltersTable">
+                        <thead>
+                            <tr>
+                                <th>Pattern (RegEx)</th>
+                                <th>Description</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorFiltersList">
+                            <!-- Error filters will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Error Filter Form Modal -->
+                <div id="errorFilterModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3 id="errorFilterModalTitle">Create Error Filter</h3>
+                        <form id="errorFilterForm">
+                            <input type="hidden" id="errorFilterId">
+                            <div class="form-group">
+                                <label for="errorFilterPattern">Error Pattern (RegEx) (Required)</label>
+                                <input type="text" id="errorFilterPattern" name="pattern" required>
+                                <small>Example: "Rate limit exceeded" or "Error code: 429"</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="errorFilterDescription">Description (Optional)</label>
+                                <textarea id="errorFilterDescription" name="description"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admins Section -->
+            <div id="adminsSection" class="section">
+                <div class="section-header">
+                    <h2>Admin Users</h2>
+                    <button id="createAdminBtn" class="btn btn-primary">Create Admin</button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="adminsTable">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Owner</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminsList">
+                            <!-- Admins will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Admin Form Modal -->
+                <div id="adminModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Create Admin</h3>
+                        <form id="adminForm">
+                            <div class="form-group">
+                                <label for="adminUsername">Username</label>
+                                <input type="text" id="adminUsername" name="username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminPassword">Password</label>
+                                <input type="password" id="adminPassword" name="password" required>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Create</button>
+                                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Confirm Action</h3>
+            <p id="confirmMessage"></p>
+            <div class="form-actions">
+                <button id="confirmYes" class="btn btn-danger">Yes</button>
+                <button id="confirmNo" class="btn btn-secondary">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer"></div>
+</body>
+</html>
